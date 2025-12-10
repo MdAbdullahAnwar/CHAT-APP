@@ -1,28 +1,17 @@
-import {
-  Button,
-  Input,
-  VStack,
-  Toaster,
-  createToaster,
-  Stack,
-} from "@chakra-ui/react";
+import { Button, Input, VStack, Stack } from "@chakra-ui/react";
 import { Mail, Lock, Eye, EyeOff, LogIn, UserCircle } from "lucide-react";
 import { Field } from "@chakra-ui/react";
-
-const toaster = createToaster({
-  placement: "bottom",
-  duration: 5000,
-});
 import { useState } from "react";
 import axios from "axios";
 import { useHistory } from "react-router-dom";
+import { toast } from "react-toastify";
 // import { ChatState } from "../../Context/ChatProvider";
 
 const Login = () => {
   const [show, setShow] = useState(false);
   const handleClick = () => setShow(!show);
-  const [email, setEmail] = useState();
-  const [password, setPassword] = useState();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
   const history = useHistory();
@@ -31,10 +20,7 @@ const Login = () => {
   const submitHandler = async () => {
     setLoading(true);
     if (!email || !password) {
-      toaster.create({
-        title: "Please Fill all the Fields",
-        type: "warning",
-      });
+      toast.warning("Please Fill all the Fields", { position: "top-right" });
       setLoading(false);
       return;
     }
@@ -52,28 +38,19 @@ const Login = () => {
         config
       );
 
-      toaster.create({
-        title: "Login Successful",
-        type: "success",
-      });
+      toast.success("Login Successful", { position: "top-right" });
       // setUser(data);
       localStorage.setItem("userInfo", JSON.stringify(data));
       setLoading(false);
       history.push("/chats");
     } catch (error) {
-      toaster.create({
-        title: "Error Occured!",
-        description: error.response.data.message,
-        type: "error",
-      });
+      toast.error(error.response?.data?.message || "Error Occured!", { position: "top-right" });
       setLoading(false);
     }
   };
 
   return (
-    <>
-      <Toaster toaster={toaster} />
-      <VStack gap={4} w="100%">
+    <VStack gap={4} w="100%">
         <Field.Root required>
           <Field.Label
             fontSize="lg"
@@ -192,7 +169,6 @@ const Login = () => {
           </Button>
         </Stack>
       </VStack>
-    </>
   );
 };
 
