@@ -1,14 +1,17 @@
-import { Button, Input, VStack, Stack, Grid, GridItem } from "@chakra-ui/react";
-import { Field } from "@chakra-ui/react";
-import { User, Mail, Lock, Eye, EyeOff, Camera, Sparkles } from "lucide-react";
+import { Button } from "@chakra-ui/button";
+import { FormControl, FormLabel } from "@chakra-ui/form-control";
+import { Input } from "@chakra-ui/input";
+import { VStack, HStack, Box, Grid } from "@chakra-ui/layout";
+import { useToast } from "@chakra-ui/toast";
 import axios from "axios";
 import { useState } from "react";
 import { useHistory } from "react-router";
-import { toast } from "react-toastify";
+import { User, Mail, Lock, Eye, EyeOff, Camera, Sparkles } from "lucide-react";
 
 const Signup = () => {
   const [show, setShow] = useState(false);
   const handleClick = () => setShow(!show);
+  const toast = useToast();
   const history = useHistory();
 
   const [name, setName] = useState("");
@@ -21,12 +24,24 @@ const Signup = () => {
   const submitHandler = async () => {
     setPicLoading(true);
     if (!name || !email || !password || !confirmpassword) {
-      toast.warning("Please Fill all the Fields", { position: "top-right" });
+      toast({
+        title: "Please Fill all the Fields",
+        status: "warning",
+        duration: 5000,
+        isClosable: true,
+        position: "bottom",
+      });
       setPicLoading(false);
       return;
     }
     if (password !== confirmpassword) {
-      toast.warning("Passwords Do Not Match", { position: "top-right" });
+      toast({
+        title: "Passwords Do Not Match",
+        status: "warning",
+        duration: 5000,
+        isClosable: true,
+        position: "bottom",
+      });
       return;
     }
     console.log(name, email, password, pic);
@@ -47,13 +62,24 @@ const Signup = () => {
         config
       );
       console.log(data);
-      toast.success("Registration Successful", { position: "top-right" });
+      toast({
+        title: "Registration Successful",
+        status: "success",
+        duration: 5000,
+        isClosable: true,
+        position: "bottom",
+      });
       localStorage.setItem("userInfo", JSON.stringify(data));
       setPicLoading(false);
-      history.push("/chats");
+      window.location.href = "/chats";
     } catch (error) {
-      toast.error(error.response?.data?.message || "Error Occured!", {
-        position: "top-right",
+      toast({
+        title: "Error Occured!",
+        description: error.response.data.message,
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+        position: "bottom",
       });
       setPicLoading(false);
     }
@@ -62,27 +88,25 @@ const Signup = () => {
   const postDetails = (pics) => {
     setPicLoading(true);
     if (pics === undefined) {
-      toast.warning("Please Select an Image!", { position: "top-right" });
+      toast({
+        title: "Please Select an Image!",
+        status: "warning",
+        duration: 5000,
+        isClosable: true,
+        position: "bottom",
+      });
       return;
     }
     console.log(pics);
     if (pics.type === "image/jpeg" || pics.type === "image/png") {
       const data = new FormData();
       data.append("file", pics);
-      data.append(
-        "upload_preset",
-        import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET
-      );
-      data.append("cloud_name", import.meta.env.VITE_CLOUDINARY_CLOUD_NAME);
-      fetch(
-        `https://api.cloudinary.com/v1_1/${
-          import.meta.env.VITE_CLOUDINARY_CLOUD_NAME
-        }/image/upload`,
-        {
-          method: "post",
-          body: data,
-        }
-      )
+      data.append("upload_preset", "chat-app");
+      data.append("cloud_name", "piyushproj");
+      fetch("https://api.cloudinary.com/v1_1/piyushproj/image/upload", {
+        method: "post",
+        body: data,
+      })
         .then((res) => res.json())
         .then((data) => {
           setPic(data.url.toString());
@@ -94,27 +118,33 @@ const Signup = () => {
           setPicLoading(false);
         });
     } else {
-      toast.warning("Please Select an Image!", { position: "top-right" });
+      toast({
+        title: "Please Select an Image!",
+        status: "warning",
+        duration: 5000,
+        isClosable: true,
+        position: "bottom",
+      });
       setPicLoading(false);
       return;
     }
   };
 
   return (
-    <VStack gap={4} w="100%">
+    <VStack spacing="15px">
       <Grid templateColumns="repeat(2, 1fr)" gap={4} w="100%">
-        <GridItem>
-          <Field.Root required>
-            <Field.Label
+        <Box>
+          <FormControl id="first-name" isRequired>
+            <FormLabel
               fontSize="lg"
               fontWeight="bold"
               color="purple.700"
               display="flex"
               alignItems="center"
-              gap={2}
             >
-              <User size={20} /> Name
-            </Field.Label>
+              <Box as={User} size={20} mr={2} />
+              Name
+            </FormLabel>
             <Input
               placeholder="Enter Your Name"
               onChange={(e) => setName(e.target.value)}
@@ -128,20 +158,20 @@ const Signup = () => {
               }}
               bg="white"
             />
-          </Field.Root>
-        </GridItem>
-        <GridItem>
-          <Field.Root required>
-            <Field.Label
+          </FormControl>
+        </Box>
+        <Box>
+          <FormControl id="email" isRequired>
+            <FormLabel
               fontSize="lg"
               fontWeight="bold"
               color="blue.700"
               display="flex"
               alignItems="center"
-              gap={2}
             >
-              <Mail size={20} /> Email Address
-            </Field.Label>
+              <Box as={Mail} size={20} mr={2} />
+              Email Address
+            </FormLabel>
             <Input
               type="email"
               placeholder="Enter Your Email Address"
@@ -156,21 +186,21 @@ const Signup = () => {
               }}
               bg="white"
             />
-          </Field.Root>
-        </GridItem>
-        <GridItem>
-          <Field.Root required>
-            <Field.Label
+          </FormControl>
+        </Box>
+        <Box>
+          <FormControl id="password" isRequired>
+            <FormLabel
               fontSize="lg"
               fontWeight="bold"
               color="pink.700"
               display="flex"
               alignItems="center"
-              gap={2}
             >
-              <Lock size={20} /> Password
-            </Field.Label>
-            <Stack direction="row" gap={2} w="100%">
+              <Box as={Lock} size={20} mr={2} />
+              Password
+            </FormLabel>
+            <HStack spacing={2}>
               <Input
                 type={show ? "text" : "password"}
                 placeholder="Enter Password"
@@ -198,32 +228,25 @@ const Signup = () => {
                 _hover={{ bg: "pink.50" }}
                 flexShrink={0}
               >
-                {show ? (
-                  <>
-                    <EyeOff size={18} /> Hide
-                  </>
-                ) : (
-                  <>
-                    <Eye size={18} /> Show
-                  </>
-                )}
+                <Box as={show ? EyeOff : Eye} size={18} mr={1} />
+                {show ? "Hide" : "Show"}
               </Button>
-            </Stack>
-          </Field.Root>
-        </GridItem>
-        <GridItem>
-          <Field.Root required>
-            <Field.Label
+            </HStack>
+          </FormControl>
+        </Box>
+        <Box>
+          <FormControl id="confirm-password" isRequired>
+            <FormLabel
               fontSize="lg"
               fontWeight="bold"
               color="orange.700"
               display="flex"
               alignItems="center"
-              gap={2}
             >
-              <Lock size={20} /> Confirm Password
-            </Field.Label>
-            <Stack direction="row" gap={2} w="100%">
+              <Box as={Lock} size={20} mr={2} />
+              Confirm Password
+            </FormLabel>
+            <HStack spacing={2}>
               <Input
                 type={show ? "text" : "password"}
                 placeholder="Confirm password"
@@ -251,34 +274,27 @@ const Signup = () => {
                 _hover={{ bg: "orange.50" }}
                 flexShrink={0}
               >
-                {show ? (
-                  <>
-                    <EyeOff size={18} /> Hide
-                  </>
-                ) : (
-                  <>
-                    <Eye size={18} /> Show
-                  </>
-                )}
+                <Box as={show ? EyeOff : Eye} size={18} mr={1} />
+                {show ? "Hide" : "Show"}
               </Button>
-            </Stack>
-          </Field.Root>
-        </GridItem>
+            </HStack>
+          </FormControl>
+        </Box>
       </Grid>
-      <Field.Root>
-        <Field.Label
+      <FormControl id="pic">
+        <FormLabel
           fontSize="lg"
           fontWeight="bold"
           color="teal.700"
           display="flex"
           alignItems="center"
-          gap={2}
         >
-          <Camera size={20} /> Upload your Picture
-        </Field.Label>
+          <Box as={Camera} size={20} mr={2} />
+          Upload your Picture
+        </FormLabel>
         <Input
           type="file"
-          p={4}
+          p={2}
           accept="image/*"
           onChange={(e) => postDetails(e.target.files[0])}
           size="lg"
@@ -288,26 +304,24 @@ const Signup = () => {
           borderColor="teal.300"
           _hover={{ borderColor: "teal.500" }}
           bg="white"
-          h="auto"
         />
-      </Field.Root>
+      </FormControl>
       <Button
         bg="pink.500"
         color="white"
         width="100%"
-        size="xl"
+        size="lg"
         mt={4}
         onClick={submitHandler}
-        loading={picLoading}
+        isLoading={picLoading}
         borderRadius="xl"
         fontWeight="bold"
         fontSize="lg"
         _hover={{ bg: "pink.600", transform: "scale(1.02)", shadow: "xl" }}
         transition="all 0.2s"
-        display="flex"
-        gap={2}
       >
-        <Sparkles size={20} /> Create Account
+        <Box as={Sparkles} size={20} mr={2} />
+        Create Account
       </Button>
     </VStack>
   );

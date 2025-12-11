@@ -2,11 +2,14 @@
 
 .App {
   min-height: 100vh;
+  width: 100%;
+}
+
+.App.with-bg {
   display: flex;
-  background-image: url("../../frontend/src//assets/bg.jpg");
+  background-image: url("./assets/bg.png");
   background-position: center;
   background-size: cover;
-  color: black;
 }
 
 ::-webkit-scrollbar {

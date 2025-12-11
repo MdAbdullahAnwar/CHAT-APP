@@ -1,17 +1,28 @@
-import { Plus } from "lucide-react";
-import { Box, Stack, Text, Button } from "@chakra-ui/react";
-import { toast } from "react-toastify";
+import { AddIcon } from "@chakra-ui/icons";
+import { Box, Stack, Text } from "@chakra-ui/layout";
+import { useToast } from "@chakra-ui/toast";
 import axios from "axios";
 import { useEffect, useState } from "react";
 import { getSender } from "../config/ChatLogics";
 import ChatLoading from "./ChatLoading";
 import GroupChatModal from "./miscellaneous/GroupChatModal";
+import { Button } from "@chakra-ui/react";
 import { ChatState } from "../Context/ChatProvider";
 
 const MyChats = ({ fetchAgain }) => {
   const [loggedUser, setLoggedUser] = useState();
 
-  const { selectedChat, setSelectedChat, user, chats, setChats } = ChatState();
+  const {
+    selectedChat,
+    setSelectedChat,
+    user,
+    chats,
+    setChats,
+    notification,
+    setNotification,
+  } = ChatState();
+
+  const toast = useToast();
 
   const fetchChats = async () => {
     try {
@@ -24,10 +35,13 @@ const MyChats = ({ fetchAgain }) => {
       const { data } = await axios.get("/api/chat", config);
       setChats(data);
     } catch (error) {
-      toast.error("Failed to Load the chats", {
+      toast({
+        title: "Error Occured!",
+        description: "Failed to Load the chats",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
         position: "bottom-left",
-        autoClose: 5000,
-        closeOnClick: true,
       });
     }
   };
@@ -40,67 +54,93 @@ const MyChats = ({ fetchAgain }) => {
 
   return (
     <Box
-      display={{ base: selectedChat ? "none" : "flex", md: "flex" }}
-      flexDirection="column"
-      alignItems="center"
-      p={3}
-      bg="white"
+      d={{ base: selectedChat ? "none" : "flex", md: "flex" }}
+      flexDir="column"
+      p={0}
+      bg="#E8E8E8"
       w={{ base: "100%", md: "31%" }}
-      borderRadius="lg"
-      borderWidth="1px"
+      borderRadius="2xl"
+      boxShadow="0 8px 30px rgba(0, 0, 0, 0.12)"
+      overflow="hidden"
     >
       <Box
-        pb={3}
-        px={3}
-        fontSize={{ base: "28px", md: "30px" }}
-        fontFamily="Work sans"
-        display="flex"
+        p={4}
+        d="flex"
         w="100%"
         justifyContent="space-between"
         alignItems="center"
+        bgGradient="linear(to-r, teal.400, teal.600)"
+        boxShadow="0 4px 15px rgba(0, 0, 0, 0.1)"
       >
-        My Chats
+        <Text
+          fontSize="xl"
+          fontFamily="Work sans"
+          fontWeight="bold"
+          color="white"
+        >
+          My Chats
+        </Text>
         <GroupChatModal>
           <Button
-            display="flex"
-            fontSize={{ base: "17px", md: "10px", lg: "17px" }}
+            d="flex"
+            fontSize={{ base: "12px", md: "10px", lg: "12px" }}
+            rightIcon={<AddIcon />}
+            bg="white"
+            color="teal.600"
+            size="sm"
+            borderRadius="lg"
+            fontWeight="bold"
+            _hover={{ bg: "teal.50", transform: "scale(1.05)" }}
+            transition="all 0.2s"
+            boxShadow="sm"
           >
-            New Group Chat
-            <Plus size={16} style={{ marginLeft: "8px" }} />
+            New Group
           </Button>
         </GroupChatModal>
       </Box>
-      <Box
-        display="flex"
-        flexDirection="column"
-        p={3}
-        bg="#F8F8F8"
-        w="100%"
-        h="100%"
-        borderRadius="lg"
-        overflowY="hidden"
-      >
+      <Box d="flex" flexDir="column" p={3} w="100%" h="100%" overflowY="hidden">
         {chats ? (
-          <Stack overflowY="scroll">
+          <Stack overflowY="auto" spacing={2} pb={0} h="100%">
             {chats.map((chat) => (
               <Box
-                onClick={() => setSelectedChat(chat)}
+                onClick={() => {
+                  setSelectedChat(chat);
+                  setNotification(
+                    notification.filter((n) => n.chat._id !== chat._id)
+                  );
+                }}
                 cursor="pointer"
-                bg={selectedChat === chat ? "#38B2AC" : "#E8E8E8"}
-                color={selectedChat === chat ? "white" : "black"}
-                px={3}
-                py={2}
-                borderRadius="lg"
+                bg={selectedChat === chat ? "teal.500" : "teal.50"}
+                color={selectedChat === chat ? "white" : "gray.800"}
+                px={4}
+                py={3}
+                borderRadius="xl"
                 key={chat._id}
+                _hover={{
+                  bg: selectedChat === chat ? "teal.600" : "teal.100",
+                  transform: "scale(1.02)",
+                  boxShadow: "lg",
+                }}
+                transition="all 0.2s"
+                boxShadow={
+                  selectedChat === chat
+                    ? "0 4px 15px rgba(20, 184, 166, 0.3)"
+                    : "sm"
+                }
               >
-                <Text>
+                <Text fontWeight="700" fontSize="md">
                   {!chat.isGroupChat
                     ? getSender(loggedUser, chat.users)
                     : chat.chatName}
                 </Text>
                 {chat.latestMessage && (
-                  <Text fontSize="xs">
-                    <b>{chat.latestMessage.sender.name} : </b>
+                  <Text
+                    fontSize="xs"
+                    opacity={selectedChat === chat ? 0.9 : 0.7}
+                    mt={1}
+                    noOfLines={1}
+                  >
+                    <b>{chat.latestMessage.sender.name}: </b>
                     {chat.latestMessage.content.length > 50
                       ? chat.latestMessage.content.substring(0, 51) + "..."
                       : chat.latestMessage.content}

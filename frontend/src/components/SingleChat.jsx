@@ -1,20 +1,28 @@
-import { Box, Text, IconButton, Spinner, Input, Field } from "@chakra-ui/react";
+import { FormControl } from "@chakra-ui/form-control";
+import {
+  Input,
+  InputGroup,
+  InputRightElement,
+  InputLeftElement,
+} from "@chakra-ui/input";
+import { Box, Text } from "@chakra-ui/layout";
 import "./styles.css";
-import { toast } from "react-toastify";
+import { IconButton, Spinner, useToast } from "@chakra-ui/react";
 import { getSender, getSenderFull } from "../config/ChatLogics";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import axios from "axios";
-import { ArrowLeft } from "lucide-react";
+import { ArrowBackIcon } from "@chakra-ui/icons";
 import ProfileModal from "./miscellaneous/ProfileModal";
 import ScrollableChat from "./ScrollableChat";
 import Lottie from "react-lottie";
 import animationData from "../animations/typing.json";
+import { Picker } from "emoji-mart";
+import "emoji-mart/css/emoji-mart.css";
 
 import io from "socket.io-client";
 import UpdateGroupChatModal from "./miscellaneous/UpdateGroupChatModal";
 import { ChatState } from "../Context/ChatProvider";
-
-const ENDPOINT = "http://localhost:5000";
+const ENDPOINT = "http://localhost:5000"; // "https://talk-a-tive.herokuapp.com"; -> After deployment
 var socket, selectedChatCompare;
 
 const SingleChat = ({ fetchAgain, setFetchAgain }) => {
@@ -24,6 +32,8 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
   const [socketConnected, setSocketConnected] = useState(false);
   const [typing, setTyping] = useState(false);
   const [istyping, setIsTyping] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const toast = useToast();
 
   const defaultOptions = {
     loop: true,
@@ -33,7 +43,6 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
       preserveAspectRatio: "xMidYMid slice",
     },
   };
-
   const { selectedChat, setSelectedChat, user, notification, setNotification } =
     ChatState();
 
@@ -58,42 +67,54 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
 
       socket.emit("join chat", selectedChat._id);
     } catch (error) {
-      toast.error("Failed to Load the Messages", {
-        position: "bottom-center",
-        autoClose: 5000,
-        closeOnClick: true,
+      toast({
+        title: "Error Occured!",
+        description: "Failed to Load the Messages",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+        position: "bottom",
       });
     }
   };
 
   const sendMessage = async (event) => {
-    if (event.key === "Enter" && newMessage) {
-      socket.emit("stop typing", selectedChat._id);
-      try {
-        const config = {
-          headers: {
-            "Content-type": "application/json",
-            Authorization: `Bearer ${user.token}`,
-          },
-        };
-        setNewMessage("");
-        const { data } = await axios.post(
-          "/api/message",
-          {
-            content: newMessage,
-            chatId: selectedChat,
-          },
-          config
-        );
-        socket.emit("new message", data);
-        setMessages([...messages, data]);
-      } catch (error) {
-        toast.error("Failed to send the Message", {
-          position: "bottom-center",
-          autoClose: 5000,
-          closeOnClick: true,
-        });
-      }
+    if (event && event.key === "Enter" && newMessage) {
+      await handleSendMessage();
+    }
+  };
+
+  const handleSendMessage = async () => {
+    if (!newMessage) return;
+
+    socket.emit("stop typing", selectedChat._id);
+    try {
+      const config = {
+        headers: {
+          "Content-type": "application/json",
+          Authorization: `Bearer ${user.token}`,
+        },
+      };
+      setNewMessage("");
+      const { data } = await axios.post(
+        "/api/message",
+        {
+          content: newMessage,
+          chatId: selectedChat,
+        },
+        config
+      );
+      socket.emit("new message", data);
+      setMessages([...messages, data]);
+    } catch (error) {
+      toast({
+        title: "Error Occured!",
+        description: "Failed to send the Message",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+        position: "bottom",
+      });
     }
   };
 
@@ -117,7 +138,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
   useEffect(() => {
     socket.on("message recieved", (newMessageRecieved) => {
       if (
-        !selectedChatCompare ||
+        !selectedChatCompare || // if chat is not selected or doesn't match current chat
         selectedChatCompare._id !== newMessageRecieved.chat._id
       ) {
         if (!notification.includes(newMessageRecieved)) {
@@ -155,44 +176,44 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     <>
       {selectedChat ? (
         <>
-          <Text
-            fontSize={{ base: "28px", md: "30px" }}
-            pb={3}
-            px={2}
-            w="100%"
-            fontFamily="Work sans"
-            display="flex"
-            justifyContent={{ base: "space-between" }}
-            alignItems="center"
-          >
-            <IconButton
-              display={{ base: "flex", md: "none" }}
-              onClick={() => setSelectedChat("")}
+          <Box w="100%" p={3} borderRadius="xl" mb={1} boxShadow="sm">
+            <Text
+              fontSize={{ base: "xl", md: "2xl" }}
+              fontFamily="Work sans"
+              fontWeight="800"
+              color="gray.800"
+              d="flex"
+              justifyContent={{ base: "space-between" }}
+              alignItems="center"
             >
-              <ArrowLeft />
-            </IconButton>
-            {messages &&
-              (!selectedChat.isGroupChat ? (
-                <>
-                  {getSender(user, selectedChat.users)}
-                  <ProfileModal
-                    user={getSenderFull(user, selectedChat.users)}
-                  />
-                </>
-              ) : (
-                <>
-                  {selectedChat.chatName.toUpperCase()}
-                  <UpdateGroupChatModal
-                    fetchMessages={fetchMessages}
-                    fetchAgain={fetchAgain}
-                    setFetchAgain={setFetchAgain}
-                  />
-                </>
-              ))}
-          </Text>
+              <IconButton
+                d={{ base: "flex", md: "none" }}
+                icon={<ArrowBackIcon />}
+                onClick={() => setSelectedChat("")}
+              />
+              {messages &&
+                (!selectedChat.isGroupChat ? (
+                  <>
+                    {getSender(user, selectedChat.users)}
+                    <ProfileModal
+                      user={getSenderFull(user, selectedChat.users)}
+                    />
+                  </>
+                ) : (
+                  <>
+                    {selectedChat.chatName.toUpperCase()}
+                    <UpdateGroupChatModal
+                      fetchMessages={fetchMessages}
+                      fetchAgain={fetchAgain}
+                      setFetchAgain={setFetchAgain}
+                    />
+                  </>
+                ))}
+            </Text>
+          </Box>
           <Box
-            display="flex"
-            flexDirection="column"
+            d="flex"
+            flexDir="column"
             justifyContent="flex-end"
             p={3}
             bg="#E8E8E8"
@@ -215,7 +236,12 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
               </div>
             )}
 
-            <Field.Root onKeyDown={sendMessage} required mt={3}>
+            <FormControl
+              onKeyDown={sendMessage}
+              id="first-name"
+              isRequired
+              mt={3}
+            >
               {istyping ? (
                 <div>
                   <Lottie
@@ -227,23 +253,53 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
               ) : (
                 <></>
               )}
-              <Input
-                variant="subtle"
-                bg="#E0E0E0"
-                placeholder="Enter a message.."
-                value={newMessage}
-                onChange={typingHandler}
-              />
-            </Field.Root>
+              {showEmojiPicker && (
+                <Box position="absolute" bottom="60px" left="0" zIndex={1000}>
+                  <Picker
+                    onSelect={(emoji) => {
+                      setNewMessage((prev) => prev + emoji.native);
+                      setShowEmojiPicker(false);
+                    }}
+                    theme="light"
+                    set="apple"
+                    showPreview={false}
+                    showSkinTones={false}
+                  />
+                </Box>
+              )}
+              <InputGroup>
+                <InputLeftElement width="3rem">
+                  <IconButton
+                    size="sm"
+                    icon={<span style={{ fontSize: "20px" }}>😊</span>}
+                    onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                    variant="ghost"
+                  />
+                </InputLeftElement>
+                <Input
+                  variant="filled"
+                  bg="#E0E0E0"
+                  placeholder="Enter a message.."
+                  value={newMessage}
+                  onChange={typingHandler}
+                  pl="3rem"
+                  pr="3rem"
+                />
+                <InputRightElement width="3rem">
+                  <IconButton
+                    size="sm"
+                    colorScheme="blue"
+                    icon={<i className="fas fa-paper-plane"></i>}
+                    onClick={handleSendMessage}
+                  />
+                </InputRightElement>
+              </InputGroup>
+            </FormControl>
           </Box>
         </>
       ) : (
-        <Box
-          display="flex"
-          alignItems="center"
-          justifyContent="center"
-          h="100%"
-        >
+        // to get socket.io on same page
+        <Box d="flex" alignItems="center" justifyContent="center" h="100%">
           <Text fontSize="3xl" pb={3} fontFamily="Work sans">
             Click on a user to start chatting
           </Text>

@@ -1,19 +1,21 @@
 import ChatProvider from "./Context/ChatProvider";
-import { createRoot } from "react-dom/client";
-import { ChakraProvider, defaultSystem } from "@chakra-ui/react";
+import React from "react";
+import ReactDOM from "react-dom";
+import { ChakraProvider } from "@chakra-ui/react";
 import { BrowserRouter } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "./index.css";
 import App from "./App.jsx";
 
-createRoot(document.getElementById("root")).render(
+ReactDOM.render(
   <BrowserRouter>
     <ChatProvider>
-      <ChakraProvider value={defaultSystem}>
+      <ChakraProvider>
         <App />
         <ToastContainer />
       </ChakraProvider>
     </ChatProvider>
-  </BrowserRouter>
+  </BrowserRouter>,
+  document.getElementById("root")
 );
