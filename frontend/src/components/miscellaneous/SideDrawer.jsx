@@ -1,30 +1,18 @@
-import { Button } from "@chakra-ui/button";
-import { useDisclosure } from "@chakra-ui/hooks";
-import { Input } from "@chakra-ui/input";
-import { Box, Text } from "@chakra-ui/layout";
+import { Box, Button, Input, Text, Spinner } from "@chakra-ui/react";
 import {
-  Menu,
-  MenuButton,
-  MenuDivider,
-  MenuItem,
-  MenuList,
-} from "@chakra-ui/menu";
-import {
-  Drawer,
-  DrawerBody,
+  DrawerRoot,
+  DrawerBackdrop,
   DrawerContent,
   DrawerHeader,
-  DrawerOverlay,
-} from "@chakra-ui/modal";
-import { Tooltip } from "@chakra-ui/tooltip";
-import { BellIcon, ChevronDownIcon } from "@chakra-ui/icons";
-import { Avatar } from "@chakra-ui/avatar";
+  DrawerBody,
+  DrawerCloseTrigger,
+} from "@chakra-ui/react";
+import { Bell, Search, ChevronDown } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useHistory } from "react-router-dom";
-import { useState } from "react";
 import axios from "axios";
-import { useToast } from "@chakra-ui/toast";
+import { toast } from "react-toastify";
 import ChatLoading from "../ChatLoading";
-import { Spinner } from "@chakra-ui/spinner";
 import ProfileModal from "./ProfileModal";
 import NotificationBadge from "react-notification-badge";
 import { Effect } from "react-notification-badge";
@@ -37,6 +25,10 @@ function SideDrawer() {
   const [searchResult, setSearchResult] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadingChat, setLoadingChat] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
 
   const {
     setSelectedChat,
@@ -47,9 +39,18 @@ function SideDrawer() {
     setChats,
   } = ChatState();
 
-  const toast = useToast();
-  const { isOpen, onOpen, onClose } = useDisclosure();
   const history = useHistory();
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (!e.target.closest('[data-menu]')) {
+        setNotifOpen(false);
+        setProfileOpen(false);
+      }
+    };
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
 
   const logoutHandler = () => {
     localStorage.removeItem("userInfo");
@@ -58,19 +59,15 @@ function SideDrawer() {
 
   const handleSearch = async () => {
     if (!search) {
-      toast({
-        title: "Please Enter something in search",
-        status: "warning",
-        duration: 5000,
-        isClosable: true,
+      toast.warning("Please enter something to search", {
         position: "top-left",
+        autoClose: 5000,
       });
       return;
     }
 
     try {
       setLoading(true);
-
       const config = {
         headers: {
           Authorization: `Bearer ${user.token}`,
@@ -78,24 +75,17 @@ function SideDrawer() {
       };
 
       const { data } = await axios.get(`/api/user?search=${search}`, config);
-
       setLoading(false);
       setSearchResult(data);
     } catch (error) {
-      toast({
-        title: "Error Occured!",
-        description: "Failed to Load the Search Results",
-        status: "error",
-        duration: 5000,
-        isClosable: true,
+      toast.error("Failed to load search results", {
         position: "bottom-left",
+        autoClose: 5000,
       });
     }
   };
 
   const accessChat = async (userId) => {
-    console.log(userId);
-
     try {
       setLoadingChat(true);
       const config = {
@@ -104,20 +94,19 @@ function SideDrawer() {
           Authorization: `Bearer ${user.token}`,
         },
       };
+
       const { data } = await axios.post(`/api/chat`, { userId }, config);
 
-      if (!chats.find((c) => c._id === data._id)) setChats([data, ...chats]);
+      if (!chats?.find((c) => c._id === data._id)) {
+        setChats([data, ...chats]);
+      }
       setSelectedChat(data);
       setLoadingChat(false);
-      onClose();
+      setIsOpen(false);
     } catch (error) {
-      toast({
-        title: "Error fetching the chat",
-        description: error.message,
-        status: "error",
-        duration: 5000,
-        isClosable: true,
+      toast.error("Error fetching the chat", {
         position: "bottom-left",
+        autoClose: 5000,
       });
     }
   };
@@ -125,85 +114,168 @@ function SideDrawer() {
   return (
     <>
       <Box
-        d="flex"
+        display="flex"
         justifyContent="space-between"
         alignItems="center"
         bg="white"
         w="100%"
-        p="5px 10px 5px 10px"
-        borderWidth="5px"
+        p="5px 10px"
+        borderBottomWidth="5px"
+        borderColor="gray.200"
       >
-        <Tooltip label="Search Users to chat" hasArrow placement="bottom-end">
-          <Button variant="ghost" onClick={onOpen}>
-            <i className="fas fa-search"></i>
-            <Text d={{ base: "none", md: "flex" }} px={4}>
-              Search User
-            </Text>
-          </Button>
-        </Tooltip>
-        <Text fontSize="2xl" fontFamily="Work sans">
+        <Button variant="ghost" onClick={() => setIsOpen(true)}>
+          <Search size={20} />
+          <Text display={{ base: "none", md: "flex" }} px={4}>
+            Search User
+          </Text>
+        </Button>
+
+        <Text fontSize="2xl" fontFamily="Work sans" fontWeight="bold">
           Talk-A-Tive
         </Text>
-        <div>
-          <Menu>
-            <MenuButton p={1}>
+
+        <Box display="flex" alignItems="center" gap={4}>
+          <Box position="relative" data-menu>
+            <Box
+              display="flex"
+              alignItems="center"
+              position="relative"
+              cursor="pointer"
+              onClick={() => {
+                setNotifOpen(!notifOpen);
+                setProfileOpen(false);
+              }}
+            >
               <NotificationBadge
                 count={notification.length}
                 effect={Effect.SCALE}
+                style={{ position: 'absolute', top: '-5px', right: '-5px' }}
               />
-              <BellIcon fontSize="2xl" m={1} />
-            </MenuButton>
-            <MenuList pl={2}>
-              {!notification.length && "No New Messages"}
-              {notification.map((notif) => (
-                <MenuItem
-                  key={notif._id}
+              <Bell size={36} />
+            </Box>
+            {notifOpen && (
+              <Box
+                position="fixed"
+                top="60px"
+                right="20px"
+                bg="white"
+                border="1px solid #e2e8f0"
+                borderRadius="md"
+                boxShadow="lg"
+                zIndex={1000}
+                minW="250px"
+              >
+                {!notification.length ? (
+                  <Box p={3}>No New Messages</Box>
+                ) : (
+                  notification.map((notif) => (
+                    <Box
+                      key={notif._id}
+                      p={3}
+                      borderBottom="1px solid #e2e8f0"
+                      cursor="pointer"
+                      _hover={{ bg: "gray.100" }}
+                      onClick={() => {
+                        setSelectedChat(notif.chat);
+                        setNotification(notification.filter((n) => n !== notif));
+                        setNotifOpen(false);
+                      }}
+                    >
+                      {notif.chat.isGroupChat
+                        ? `New Message in ${notif.chat.chatName}`
+                        : `New Message from ${getSender(user, notif.chat.users)}`}
+                    </Box>
+                  ))
+                )}
+              </Box>
+            )}
+          </Box>
+
+          <Box position="relative" data-menu>
+            <Box
+              display="flex"
+              alignItems="center"
+              gap={1}
+              cursor="pointer"
+              onClick={() => {
+                setProfileOpen(!profileOpen);
+                setNotifOpen(false);
+              }}
+            >
+              <img
+                src={user?.pic}
+                alt={user?.name}
+                style={{
+                  width: "36px",
+                  height: "36px",
+                  borderRadius: "50%",
+                  objectFit: "cover",
+                }}
+              />
+              <ChevronDown size={16} />
+            </Box>
+            {profileOpen && (
+              <Box
+                position="fixed"
+                top="60px"
+                right="20px"
+                bg="white"
+                border="1px solid #e2e8f0"
+                borderRadius="md"
+                boxShadow="lg"
+                zIndex={1000}
+                minW="150px"
+              >
+                <Box
+                  p={3}
+                  borderBottom="1px solid #e2e8f0"
+                  cursor="pointer"
+                  _hover={{ bg: "gray.100" }}
+                  w="100%"
                   onClick={() => {
-                    setSelectedChat(notif.chat);
-                    setNotification(notification.filter((n) => n !== notif));
+                    setProfileModalOpen(true);
+                    setProfileOpen(false);
                   }}
                 >
-                  {notif.chat.isGroupChat
-                    ? `New Message in ${notif.chat.chatName}`
-                    : `New Message from ${getSender(user, notif.chat.users)}`}
-                </MenuItem>
-              ))}
-            </MenuList>
-          </Menu>
-          <Menu>
-            <MenuButton as={Button} bg="white" rightIcon={<ChevronDownIcon />}>
-              <Avatar
-                size="sm"
-                cursor="pointer"
-                name={user.name}
-                src={user.pic}
-              />
-            </MenuButton>
-            <MenuList>
-              <ProfileModal user={user}>
-                <MenuItem>My Profile</MenuItem>{" "}
-              </ProfileModal>
-              <MenuDivider />
-              <MenuItem onClick={logoutHandler}>Logout</MenuItem>
-            </MenuList>
-          </Menu>
-        </div>
+                  My Profile
+                </Box>
+                <Box
+                  p={3}
+                  cursor="pointer"
+                  _hover={{ bg: "gray.100" }}
+                  w="100%"
+                  onClick={() => {
+                    logoutHandler();
+                    setProfileOpen(false);
+                  }}
+                >
+                  Logout
+                </Box>
+              </Box>
+            )}
+          </Box>
+        </Box>
       </Box>
 
-      <Drawer placement="left" onClose={onClose} isOpen={isOpen}>
-        <DrawerOverlay />
+      <ProfileModal user={user} open={profileModalOpen} onOpenChange={setProfileModalOpen} />
+
+      <DrawerRoot placement="start" open={isOpen} onOpenChange={({ open }) => setIsOpen(open)}>
+        <DrawerBackdrop />
         <DrawerContent>
           <DrawerHeader borderBottomWidth="1px">Search Users</DrawerHeader>
+          <DrawerCloseTrigger />
           <DrawerBody>
-            <Box d="flex" pb={2}>
+            <Box display="flex" pb={2} gap={2}>
               <Input
                 placeholder="Search by name or email"
-                mr={2}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
-              <Button onClick={handleSearch}>Go</Button>
+              <Button onClick={handleSearch} colorScheme="blue">
+                Go
+              </Button>
             </Box>
+
             {loading ? (
               <ChatLoading />
             ) : (
@@ -215,10 +287,11 @@ function SideDrawer() {
                 />
               ))
             )}
-            {loadingChat && <Spinner ml="auto" d="flex" />}
+
+            {loadingChat && <Spinner ml="auto" display="flex" />}
           </DrawerBody>
         </DrawerContent>
-      </Drawer>
+      </DrawerRoot>
     </>
   );
 }

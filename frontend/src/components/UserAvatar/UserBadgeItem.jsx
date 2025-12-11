@@ -1,5 +1,5 @@
-import { CloseIcon } from "@chakra-ui/icons";
-import { Badge } from "@chakra-ui/layout";
+import { X } from "lucide-react";
+import { Badge, Box } from "@chakra-ui/react";
 
 const UserBadgeItem = ({ user, handleFunction, admin }) => {
   return (
@@ -11,13 +11,17 @@ const UserBadgeItem = ({ user, handleFunction, admin }) => {
       mb={2}
       variant="solid"
       fontSize={12}
-      colorScheme="purple"
+      colorPalette="purple"
       cursor="pointer"
       onClick={handleFunction}
+      display="flex"
+      alignItems="center"
     >
       {user.name}
       {admin === user._id && <span> (Admin)</span>}
-      <CloseIcon pl={1} />
+      <Box as="span" pl={1} display="inline-flex" alignItems="center">
+        <X size={12} />
+      </Box>
     </Badge>
   );
 };

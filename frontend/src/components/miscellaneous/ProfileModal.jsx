@@ -1,66 +1,66 @@
-import { ViewIcon } from "@chakra-ui/icons";
-import {
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalFooter,
-  ModalBody,
-  ModalCloseButton,
-  Button,
-  useDisclosure,
-  IconButton,
-  Text,
-  Image,
-} from "@chakra-ui/react";
 
-const ProfileModal = ({ user, children }) => {
-  const { isOpen, onOpen, onClose } = useDisclosure();
+import {
+  DialogRoot,
+  DialogContent,
+  DialogHeader,
+  DialogBody,
+  DialogFooter,
+  DialogCloseTrigger,
+  DialogTrigger,
+} from "@chakra-ui/react";
+import { Button, Text, Image, Box } from "@chakra-ui/react";
+import { useState } from "react";
+
+const ProfileModal = ({ user, children, open: controlledOpen, onOpenChange }) => {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : internalOpen;
+  const setOpen = isControlled ? onOpenChange : setInternalOpen;
 
   return (
-    <>
-      {children ? (
-        <span onClick={onOpen}>{children}</span>
-      ) : (
-        <IconButton d={{ base: "flex" }} icon={<ViewIcon />} onClick={onOpen} />
+    <DialogRoot
+      size="lg"
+      open={open}
+      onOpenChange={(e) => setOpen(e.open)}
+      centered
+    >
+      {!isControlled && (
+        <DialogTrigger asChild>
+          <span />
+        </DialogTrigger>
       )}
-      <Modal size="lg" onClose={onClose} isOpen={isOpen} isCentered>
-        <ModalOverlay />
-        <ModalContent h="410px">
-          <ModalHeader
-            fontSize="40px"
-            fontFamily="Work sans"
-            d="flex"
-            justifyContent="center"
-          >
-            {user.name}
-          </ModalHeader>
-          <ModalCloseButton />
-          <ModalBody
-            d="flex"
-            flexDir="column"
-            alignItems="center"
-            justifyContent="space-between"
-          >
-            <Image
-              borderRadius="full"
-              boxSize="150px"
-              src={user.pic}
-              alt={user.name}
-            />
-            <Text
-              fontSize={{ base: "28px", md: "30px" }}
-              fontFamily="Work sans"
-            >
-              Email: {user.email}
-            </Text>
-          </ModalBody>
-          <ModalFooter>
-            <Button onClick={onClose}>Close</Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
-    </>
+
+      <DialogContent height="410px">
+        <DialogHeader
+          fontSize="40px"
+          fontFamily="Work sans"
+          display="flex"
+          justifyContent="center"
+        >
+          {user.name}
+        </DialogHeader>
+        <DialogCloseTrigger />
+        <DialogBody
+          display="flex"
+          flexDirection="column"
+          alignItems="center"
+          justifyContent="space-between"
+        >
+          <Image
+            borderRadius="full"
+            boxSize="150px"
+            src={user.pic}
+            alt={user.name}
+          />
+          <Text fontSize={{ base: "28px", md: "30px" }} fontFamily="Work sans">
+            Email: {user.email}
+          </Text>
+        </DialogBody>
+        <DialogFooter>
+          <Button onClick={() => setOpen(false)}>Close</Button>
+        </DialogFooter>
+      </DialogContent>
+    </DialogRoot>
   );
 };
 
