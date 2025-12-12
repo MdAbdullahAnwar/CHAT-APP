@@ -2,6 +2,7 @@ import { AddIcon } from "@chakra-ui/icons";
 import { Box, Stack, Text } from "@chakra-ui/layout";
 import { useToast } from "@chakra-ui/toast";
 import axios from "axios";
+import { format, isToday, isYesterday } from "date-fns";
 import { useEffect, useState } from "react";
 import { getSender } from "../config/ChatLogics";
 import ChatLoading from "./ChatLoading";
@@ -134,17 +135,31 @@ const MyChats = ({ fetchAgain }) => {
                     : chat.chatName}
                 </Text>
                 {chat.latestMessage && (
-                  <Text
-                    fontSize="xs"
-                    opacity={selectedChat === chat ? 0.9 : 0.7}
-                    mt={1}
-                    noOfLines={1}
-                  >
-                    <b>{chat.latestMessage.sender.name}: </b>
-                    {chat.latestMessage.content.length > 50
-                      ? chat.latestMessage.content.substring(0, 51) + "..."
-                      : chat.latestMessage.content}
-                  </Text>
+                  <>
+                    <Text
+                      fontSize="xs"
+                      opacity={selectedChat === chat ? 0.9 : 0.7}
+                      mt={1}
+                      noOfLines={1}
+                    >
+                      <b>{chat.latestMessage.sender.name}: </b>
+                      {chat.latestMessage.media
+                        ? chat.latestMessage.media.type === "image"
+                          ? "📷 Photo"
+                          : "🎥 Video"
+                        : chat.latestMessage.content.length > 50
+                        ? chat.latestMessage.content.substring(0, 51) + "..."
+                        : chat.latestMessage.content}
+                    </Text>
+                    <Text fontSize="xs" opacity={0.6} mt={0.5}>
+                      {(() => {
+                        const date = new Date(chat.latestMessage.createdAt);
+                        if (isToday(date)) return format(date, "HH:mm");
+                        if (isYesterday(date)) return "Yesterday";
+                        return format(date, "dd/MM/yyyy");
+                      })()}
+                    </Text>
+                  </>
                 )}
               </Box>
             ))}

@@ -33,6 +33,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
   const [typing, setTyping] = useState(false);
   const [istyping, setIsTyping] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const toast = useToast();
 
   const defaultOptions = {
@@ -84,8 +85,8 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     }
   };
 
-  const handleSendMessage = async () => {
-    if (!newMessage) return;
+  const handleSendMessage = async (mediaData = null) => {
+    if (!newMessage && !mediaData) return;
 
     socket.emit("stop typing", selectedChat._id);
     try {
@@ -95,12 +96,14 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
           Authorization: `Bearer ${user.token}`,
         },
       };
+      const messageContent = newMessage;
       setNewMessage("");
       const { data } = await axios.post(
         "/api/message",
         {
-          content: newMessage,
+          content: messageContent,
           chatId: selectedChat,
+          media: mediaData,
         },
         config
       );
@@ -114,6 +117,57 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
         duration: 5000,
         isClosable: true,
         position: "bottom",
+      });
+    }
+  };
+
+  const handleMediaUpload = async (file) => {
+    if (!file) return;
+
+    const validTypes = ["image/jpeg", "image/png", "image/gif", "video/mp4", "video/webm"];
+    if (!validTypes.includes(file.type)) {
+      toast({
+        title: "Invalid file type",
+        description: "Please upload an image or video",
+        status: "warning",
+        duration: 3000,
+        isClosable: true,
+        position: "top",
+      });
+      return;
+    }
+
+    setUploading(true);
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET);
+    formData.append("cloud_name", import.meta.env.VITE_CLOUDINARY_CLOUD_NAME);
+
+    try {
+      const resourceType = file.type.startsWith("video") ? "video" : "image";
+      const response = await fetch(
+        `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/${resourceType}/upload`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+      const data = await response.json();
+      setUploading(false);
+
+      await handleSendMessage({
+        url: data.secure_url,
+        type: resourceType,
+      });
+    } catch (error) {
+      setUploading(false);
+      toast({
+        title: "Upload failed",
+        description: "Failed to upload media",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+        position: "top",
       });
     }
   };
@@ -268,12 +322,26 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                 </Box>
               )}
               <InputGroup>
-                <InputLeftElement width="3rem">
+                <InputLeftElement width="6rem" display="flex" gap={1}>
                   <IconButton
                     size="sm"
                     icon={<span style={{ fontSize: "20px" }}>😊</span>}
                     onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                     variant="ghost"
+                  />
+                  <IconButton
+                    size="sm"
+                    icon={<i className="fas fa-paperclip"></i>}
+                    onClick={() => document.getElementById("media-upload").click()}
+                    variant="ghost"
+                    isLoading={uploading}
+                  />
+                  <input
+                    id="media-upload"
+                    type="file"
+                    accept="image/*,video/*"
+                    style={{ display: "none" }}
+                    onChange={(e) => handleMediaUpload(e.target.files[0])}
                   />
                 </InputLeftElement>
                 <Input
@@ -282,7 +350,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                   placeholder="Enter a message.."
                   value={newMessage}
                   onChange={typingHandler}
-                  pl="3rem"
+                  pl="6rem"
                   pr="3rem"
                 />
                 <InputRightElement width="3rem">
@@ -290,7 +358,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                     size="sm"
                     colorScheme="blue"
                     icon={<i className="fas fa-paper-plane"></i>}
-                    onClick={handleSendMessage}
+                    onClick={() => handleSendMessage()}
                   />
                 </InputRightElement>
               </InputGroup>
