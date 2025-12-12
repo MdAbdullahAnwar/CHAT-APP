@@ -997,9 +997,8 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 **Your Name**
 
-- GitHub: [@yourusername](https://github.com/yourusername)
-- Email: your.email@example.com
-- LinkedIn: [Your Name](https://linkedin.com/in/yourprofile)
+- GitHub: [@MdAbdullahAnwar](https://github.com/MdAbdullahAnwar)
+- Email: crazydeveloper4444@gmail.com
 
 ---
 
@@ -1017,7 +1016,7 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 ## 📞 Support
 
-For support, email your.email@example.com or open an issue on GitHub.
+For support, email crazydeveloper4444@gmail.com or open an issue on GitHub.
 
 ---
 
@@ -1044,16 +1043,6 @@ For support, email your.email@example.com or open an issue on GitHub.
 - [ ] Chat backup/export
 - [ ] Custom emoji
 - [ ] Stickers
-
----
-
-## 📊 Performance
-
-- **Message Delivery**: < 100ms
-- **Database Queries**: Optimized with indexes
-- **Image Upload**: Compressed and optimized
-- **Bundle Size**: Optimized with Vite
-- **Lazy Loading**: Route-based code splitting
 
 ---
 
